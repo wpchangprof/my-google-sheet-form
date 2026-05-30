@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>GitHub 連動 Google 試算表</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f7f6; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input, textarea { width: 300px; padding: 8px; }
+        button { padding: 10px 15px; background-color: #28a745; color: white; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <h2>資料輸入表單</h2>
+    <form id="myForm">
+        <div class="form-group">
+            <label for="name">姓名：</label>
+            <input type="text" id="name" required>
+        </div>
+        <div class="form-group">
+            <label for="phone">電話：</label>
+            <input type="text" id="phone" required>
+        </div>
+        <div class="form-group">
+            <label for="message">訊息：</label>
+            <textarea id="message" rows="4"></textarea>
+        </div>
+        <button type="submit">送出資料</button>
+    </form>
+
+    <script>
+        // 替換成你剛剛在 Google GAS 複製的網頁應用程式網址
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzEKVB5sgDz6nS66HSVw5K9rWVR88Vm0fIQrjtjC5EoQGosn0UUbmr0QofuezRaWvGK/exec";
+
+        document.getElementById('myForm').addEventListener('submit', function(e) {
+            e.preventDefault(); // 防止表單預設跳頁行為
+
+            // 打包要傳送的資料
+            const formData = {
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                message: document.getElementById('message').value
+            };
+
+            // 使用 fetch 發送 POST 請求給 GAS
+            fetch(GAS_URL, {
+                method: "POST",
+                mode: "cors", // 允許跨網域存取
+                headers: {
+                    "Content-Type": "text/plain" // GAS 接收 JSON 時建議用 text/plain 避開預檢請求
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.result === "success") {
+                    alert("資料新增成功！");
+                    document.getElementById('myForm').reset(); // 清空表單
+                } else {
+                    alert("發生錯誤：" + data.message);
+                }
+            })
+            .catch(error => {
+                console.error("錯誤:", error);
+                alert("連線失敗，請檢查主控台。");
+            });
+        });
+    </script>
+</body>
+</html>
