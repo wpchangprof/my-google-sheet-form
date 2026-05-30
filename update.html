@@ -56,11 +56,7 @@
         // 網址結尾必須是 /exec，中間不要有任何空格或奇怪符號
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxSlYROjklb1GfHcJEO1bcjPQwv2sWhLyODJ375KEVaii8Z1Rv4b_oMvtfpcOtB4pQX/exec";
 
-        // 檢查網址有沒有貼對
-        if (GAS_URL.includes("https://script.google.com/macros/s/AKfycbxSlYROjklb1GfHcJEO1bcjPQwv2sWhLyODJ375KEVaii8Z1Rv4b_oMvtfpcOtB4pQX/exec") || !GAS_URL.startsWith("https://script.google.com")) {
-            alert("⚠️ 錯誤：你還沒有在程式碼第 53 行貼上正確的 Google GAS 網址喔！");
-        }
-
+      
         // --- 功能一：搜尋資料 ---
         document.getElementById('btnSearch').addEventListener('click', function() {
             const name = document.getElementById('searchName').value.trim();
