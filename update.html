@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Google 試算表資料修改系統</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f7f6; color: #333; }
+        .card { background: white; padding: 20px; border-radius: 8px; max-width: 400px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; }
+        .btn-search { background-color: #007bff; }
+        .btn-update { background-color: #ffc107; color: #212529; width: 100%; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <h2>修改資料系統</h2>
+
+    <div class="card">
+        <h3>1. 輸入姓名搜尋資料</h3>
+        <div class="form-group">
+            <label for="searchName">欲修改的姓名：</label>
+            <input type="text" id="searchName" placeholder="請輸入完整的姓名">
+        </div>
+        <button type="button" class="btn-search" id="btnSearch">開始搜尋</button>
+    </div>
+
+    <div class="card hidden" id="updateFormCard">
+        <h3>2. 修改資料內容</h3>
+        <form id="updateForm">
+            <input type="hidden" id="rowIndex">
+
+            <div class="form-group">
+                <label for="name">姓名（亦可修改）：</label>
+                <input type="text" id="name" required>
+            </div>
+            <div class="form-group">
+                <label for="phone">電話：</label>
+                <input type="text" id="phone" required>
+            </div>
+            <div class="form-group">
+                <label for="message">訊息：</label>
+                <textarea id="message" rows="4"></textarea>
+            </div>
+            <button type="submit" class="btn-update">確認更新資料</button>
+        </form>
+    </div>
+
+    <script>
+        // 🛠️ 請替換成你部署好的 Google Apps Script 網頁應用程式網址
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwe0tfLFp1VQU8PBgMpi0T4j0BlFMLelC8UwJcpabWtGe76djFEIKyeGY-5zQ1GubRz/exec";
+
+        // --- 功能一：搜尋資料 ---
+        document.getElementById('btnSearch').addEventListener('click', function() {
+            const name = document.getElementById('searchName').value.trim();
+            if(!name) { alert("請先輸入姓名！"); return; }
+
+            // 發送 GET 請求給 GAS 進行查詢
+            fetch(`${GAS_URL}?name=${encodeURIComponent(name)}`)
+            .then(response => response.json())
+            .then(data => {
+                if(data.result === "found") {
+                    alert("已找到資料！");
+                    // 顯示修改表單並把舊資料填入
+                    document.getElementById('updateFormCard').classList.remove('hidden');
+                    document.getElementById('rowIndex').value = data.rowIndex;
+                    document.getElementById('name').value = data.name;
+                    document.getElementById('phone').value = data.phone;
+                    document.getElementById('message').value = data.message;
+                } else if(data.result === "not_found") {
+                    alert("找不到該姓名，請確認字是否有打錯。");
+                    document.getElementById('updateFormCard').classList.add('hidden');
+                } else {
+                    alert("查詢失敗：" + data.message);
+                }
+            })
+            .catch(error => {
+                console.error("搜尋錯誤:", error);
+                alert("連線失敗，請檢查網路或網址。");
+            });
+        });
+
+        // --- 功能二：更新資料 ---
+        document.getElementById('updateForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // 打包修改後的資料與先前記錄的列數 (rowIndex)
+            const updateData = {
+                rowIndex: parseInt(document.getElementById('rowIndex').value),
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                message: document.getElementById('message').value
+            };
+
+            // 發送 POST 請求給 GAS 進行覆寫
+            fetch(GAS_URL, {
+                method: "POST",
+                mode: "cors",
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify(updateData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.result === "success") {
+                    alert(data.message);
+                    // 成功後隱藏表單並清空搜尋框
+                    document.getElementById('updateFormCard').classList.add('hidden');
+                    document.getElementById('searchName').value = "";
+                } else {
+                    alert("更新失敗：" + data.message);
+                }
+            })
+            .catch(error => {
+                console.error("更新錯誤:", error);
+                alert("更新連線失敗。");
+            });
+        });
+    </script>
+</body>
+</html>
