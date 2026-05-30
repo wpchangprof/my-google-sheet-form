@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google 試算表資料修改系統</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 20px; background-color: #f4f7f6; color: #333; }
+        .card { background: white; padding: 20px; border-radius: 8px; max-width: 400px; margin: 0 auto 20px auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, textarea { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+        button { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; font-size: 16px; width: 100%; }
+        .btn-search { background-color: #007bff; }
+        .btn-update { background-color: #ffc107; color: #212529; }
+        .hidden { display: none; }
+        h2, h3 { text-align: center; }
+    </style>
+</head>
+<body>
+
+    <h2>修改資料系統</h2>
+
+    <div class="card">
+        <h3>1. 輸入姓名搜尋資料</h3>
+        <div class="form-group">
+            <label for="searchName">欲修改的姓名：</label>
+            <input type="text" id="searchName" placeholder="請輸入完整的姓名">
+        </div>
+        <button type="button" class="btn-search" id="btnSearch">開始搜尋</button>
+    </div>
+
+    <div class="card hidden" id="updateFormCard">
+        <h3>2. 修改資料內容</h3>
+        <form id="updateForm">
+            <input type="hidden" id="rowIndex">
+
+            <div class="form-group">
+                <label for="name">姓名（亦可修改）：</label>
+                <input type="text" id="name" required>
+            </div>
+            <div class="form-group">
+                <label for="phone">電話：</label>
+                <input type="text" id="phone" required>
+            </div>
+            <div class="form-group">
+                <label for="message">訊息：</label>
+                <textarea id="message" rows="4"></textarea>
+            </div>
+            <button type="submit" class="btn-update">確認更新資料</button>
+        </form>
+    </div>
+
+    <script>
+        // ??? 【請在下方引號內，貼上你完整的 Google GAS 網址】
+        // 網址結尾必須是 /exec，中間不要有任何空格或奇怪符號
+        const GAS_URL = "這裡請換成你的GAS網址";
+
+        // 檢查網址有沒有貼對
+        if (GAS_URL === "這裡請換成你的GAS網址" || !GAS_URL.startsWith("https://script.google.com")) {
+            alert("?? 錯誤：你還沒有在程式碼第 53 行貼上正確的 Google GAS 網址喔！");
+        }
+
+        // --- 功能一：搜尋資料 ---
+        document.getElementById('btnSearch').addEventListener('click', function() {
+            const name = document.getElementById('searchName').value.trim();
+            if(!name) { alert("請先輸入姓名！"); return; }
+
+            const btn = document.getElementById('btnSearch');
+            btn.disabled = true;
+            btn.innerText = "搜尋中...";
+
+            // 發送 GET 請求給 GAS 進行查詢
+            fetch(`${GAS_URL}?name=${encodeURIComponent(name)}`)
+            .then(response => {
+                if (!response.ok) throw new Error('網路回應不成功: ' + response.status);
+                return response.json();
+            })
+            .then(data => {
+                if(data.result === "found") {
+                    alert("已找到資料！");
+                    document.getElementById('updateFormCard').classList.remove('hidden');
+                    document.getElementById('rowIndex').value = data.rowIndex;
+                    document.getElementById('name').value = data.name || "";
+                    document.getElementById('phone').value = data.phone || "";
+                    document.getElementById('message').value = data.message || "";
+                } else if(data.result === "not_found") {
+                    alert("找不到該姓名，請確認字是否有打錯（注意空格）。");
+                    document.getElementById('updateFormCard').classList.add('hidden');
+                } else {
+                    alert("查詢失敗：" + data.message);
+                }
+            })
+            .catch(error => {
+                console.error("搜尋錯誤詳細資訊:", error);
+                alert("連線失敗！\n1. 請檢查電腦網路。\n2. 請確認 GAS 網址是否正確。\n3. 請確認 GAS 後台是否有重新「部署新版本」。");
+            })
+            .finally(() =>
